@@ -142,10 +142,10 @@ class Car extends Thread {
                     speed = chooseSpeed();
                 }
                 newpos = nextPos(curpos);
-                CarControl.semaphores[newpos.row][newpos.col].P();
                 Alley.enter(no);
+                CarControl.semaphores[newpos.row][newpos.col].P();
 
-                //  Move to new position 
+                //  Move to new position
                 cd.clear(curpos);
                 cd.mark(curpos, newpos, col, no);
                 sleep(speed());
@@ -167,53 +167,29 @@ class Car extends Thread {
 
 class Alley {
 
-    public static Semaphore allaySemaphore = new Semaphore(1);
-    static int amount = 0;
+    static Semaphore going = new Semaphore(1);
 
-    public static void enter(int no) {
+    static void enter(int no) {
         try {
             if (no < 5) {
-                if ((CarControl.car[no].newpos.row == 2 && CarControl.car[no].newpos.col == 1) ||
-                        (CarControl.car[no].newpos.row == 1 && CarControl.car[no].newpos.col == 2)) {
-                    if (allaySemaphore.toString().equals("1")) {
-                        allaySemaphore.P();
-                        System.out.println("Lave tal fortsætter");
-                        CarControl.semaphores[10][0].P();
-                    }
-                    amount++;
+                if ((CarControl.car[no].newpos.row == 2 && CarControl.car[no].newpos.col == 1) || (CarControl.car[no].newpos.row == 1 && CarControl.car[no].newpos.col == 2)) {
+                    going.P();
                 }
-            } else if (CarControl.car[no].newpos.row == 10 && CarControl.car[no].newpos.col == 0) {
-                if (allaySemaphore.toString().equals("1")) {
-                    allaySemaphore.P();
-                    System.out.println("Høje tal fortsætter");
-                    CarControl.semaphores[2][1].P();
-                    CarControl.semaphores[1][3].P();
-                }
-                amount++;
+            } else if (CarControl.car[no].newpos.row == 9 && CarControl.car[no].newpos.col == 0) {
+                going.P();
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
-    public static void leave(int no) {
+    static void leave(int no) {
         if (no < 5) {
-            if ((CarControl.car[no].newpos.row == 9 && CarControl.car[no].newpos.col == 1)) {
-                amount--;
-                if (allaySemaphore.toString().equals("0") && amount == 0) {
-                    System.out.println("Lave tal fortsætter");
-                    CarControl.semaphores[10][0].V();
-                    allaySemaphore.V();
-                }
+            if ((CarControl.car[no].newpos.row == 9 && CarControl.car[no].newpos.col == 0)) {
+                going.V();
             }
-        } else if (CarControl.car[no].newpos.row == 1 && CarControl.car[no].newpos.col == 2) {
-            amount--;
-            if (allaySemaphore.toString().equals("0") && amount == 0) {
-                System.out.println("Høje tal fortsætter");
-                CarControl.semaphores[2][1].V();
-                CarControl.semaphores[1][3].V();
-                allaySemaphore.V();
-            }
+        } else if (CarControl.car[no].newpos.row == 0 && CarControl.car[no].newpos.col == 2) {
+            going.V();
         }
     }
 
