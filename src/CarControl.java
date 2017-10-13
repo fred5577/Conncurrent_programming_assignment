@@ -167,16 +167,33 @@ class Car extends Thread {
 
 class Alley {
 
-    static Semaphore going = new Semaphore(1);
+    static Semaphore empty = new Semaphore(1);
+    static Semaphore read = new Semaphore(1);
+    static int counter = 0;
+    static String direction = "";
 
     static void enter(int no) {
+        if (no < 5) {
+            if ((CarControl.car[no].newpos.row == 2 && CarControl.car[no].newpos.col == 1) || (CarControl.car[no].newpos.row == 1 && CarControl.car[no].newpos.col == 2)) {
+                enterDirection("down");
+            }
+        } else if (CarControl.car[no].newpos.row == 9 && CarControl.car[no].newpos.col == 0) {
+            enterDirection("up");
+        }
+    }
+
+    static void enterDirection(String tDirection) {
         try {
-            if (no < 5) {
-                if ((CarControl.car[no].newpos.row == 2 && CarControl.car[no].newpos.col == 1) || (CarControl.car[no].newpos.row == 1 && CarControl.car[no].newpos.col == 2)) {
-                    going.P();
-                }
-            } else if (CarControl.car[no].newpos.row == 9 && CarControl.car[no].newpos.col == 0) {
-                going.P();
+            if (!direction.equals(tDirection)) {
+                empty.P();
+                read.P();
+                direction = tDirection;
+                counter++;
+                read.V();
+            } else {
+                read.P();
+                counter++;
+                read.V();
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -184,12 +201,17 @@ class Alley {
     }
 
     static void leave(int no) {
-        if (no < 5) {
-            if ((CarControl.car[no].newpos.row == 9 && CarControl.car[no].newpos.col == 0)) {
-                going.V();
+        try {
+            if ((no < 5 && CarControl.car[no].newpos.row == 9 && CarControl.car[no].newpos.col == 1) || (CarControl.car[no].newpos.row == 0 && CarControl.car[no].newpos.col == 2)) {
+                read.P();
+                counter--;
+                if (counter == 0) {
+                    empty.V();
+                }
+                read.V();
             }
-        } else if (CarControl.car[no].newpos.row == 0 && CarControl.car[no].newpos.col == 2) {
-            going.V();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
