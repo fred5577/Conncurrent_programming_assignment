@@ -167,51 +167,61 @@ class Car extends Thread {
 
 class Alley {
 
-    static Semaphore empty = new Semaphore(1);
-    static Semaphore read = new Semaphore(1);
+
     static int counter = 0;
-    static String direction = "";
+
+    static Semaphore down = new Semaphore(1);
+    static Semaphore up = new Semaphore(1);
+    static Semaphore read = new Semaphore(1);
+
 
     static void enter(int no) {
         if (no < 5) {
             if ((CarControl.car[no].newpos.row == 2 && CarControl.car[no].newpos.col == 1) || (CarControl.car[no].newpos.row == 1 && CarControl.car[no].newpos.col == 2)) {
-                enterDirection("down");
+                enter2(down, up);
             }
         } else if (CarControl.car[no].newpos.row == 9 && CarControl.car[no].newpos.col == 0) {
-            enterDirection("up");
+            enter2(up, down);
         }
     }
 
-    static void enterDirection(String tDirection) {
+    static void enter2(Semaphore s, Semaphore s2) {
         try {
-            if (!direction.equals(tDirection)) {
-                empty.P();
-                read.P();
-                direction = tDirection;
-                counter++;
-                read.V();
-            } else {
-                read.P();
-                counter++;
-                read.V();
+            s.P();
+            read.P();
+            counter++;
+            if (counter == 1) {
+                s2.P();
             }
+            read.V();
+            s.V();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    static void leave2(Semaphore s, Semaphore s2) {
+        try {
+            s.P();
+            read.P();
+            counter--;
+            if (counter == 0) {
+                s2.V();
+            }
+            read.V();
+            s.V();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
     static void leave(int no) {
-        try {
-            if ((no < 5 && CarControl.car[no].newpos.row == 9 && CarControl.car[no].newpos.col == 1) || (CarControl.car[no].newpos.row == 0 && CarControl.car[no].newpos.col == 2)) {
-                read.P();
-                counter--;
-                if (counter == 0) {
-                    empty.V();
-                }
-                read.V();
+        if ((no < 5 && CarControl.car[no].newpos.row == 9 && CarControl.car[no].newpos.col == 1) || (CarControl.car[no].newpos.row == 0 && CarControl.car[no].newpos.col == 2)) {
+            if (no < 5) {
+                leave2(down, up);
+            } else {
+                leave2(up, down);
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
     }
 
