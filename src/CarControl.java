@@ -167,60 +167,79 @@ class Car extends Thread {
 
 class Alley {
 
-
-    static int counter = 0;
+    /***
+     * Inspired by chapter 4, page 170, section 4.4.2 readers/writers.
+     * Since the example are used multiple readers who are excluded from the writer, we thought about creating two groups of "readers" each group excluded from the other group.
+     */
 
     static Semaphore down = new Semaphore(1);
     static Semaphore up = new Semaphore(1);
     static Semaphore read = new Semaphore(1);
 
+    static int counterU = 0;
+    static int counterD = 0;
+
+
+    static void enterDirection(String direction) {
+        try {
+            if (direction.equals("Down")) {
+                down.P();
+                counterD++;
+                if (counterD == 1) {
+                    read.P();
+                }
+                down.V();
+            } else {
+                up.P();
+                counterU++;
+                if (counterU == 1) {
+                    read.P();
+                }
+                up.V();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    static void leaveDirection(String direction) {
+        try {
+            if (direction.equals("Down")) {
+                down.P();
+                counterD--;
+                if (counterD == 0) {
+                    read.V();
+                }
+                down.V();
+            } else {
+                up.P();
+                counterU--;
+                if (counterU == 0) {
+                    read.V();
+                }
+                up.V();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 
     static void enter(int no) {
         if (no < 5) {
             if ((CarControl.car[no].newpos.row == 2 && CarControl.car[no].newpos.col == 1) || (CarControl.car[no].newpos.row == 1 && CarControl.car[no].newpos.col == 2)) {
-                enter2(down, up);
+                enterDirection("Down");
             }
         } else if (CarControl.car[no].newpos.row == 9 && CarControl.car[no].newpos.col == 0) {
-            enter2(up, down);
-        }
-    }
-
-    static void enter2(Semaphore s, Semaphore s2) {
-        try {
-            s.P();
-            read.P();
-            counter++;
-            if (counter == 1) {
-                s2.P();
-            }
-            read.V();
-            s.V();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    static void leave2(Semaphore s, Semaphore s2) {
-        try {
-            s.P();
-            read.P();
-            counter--;
-            if (counter == 0) {
-                s2.V();
-            }
-            read.V();
-            s.V();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            enterDirection("Up");
         }
     }
 
     static void leave(int no) {
         if ((no < 5 && CarControl.car[no].newpos.row == 9 && CarControl.car[no].newpos.col == 1) || (CarControl.car[no].newpos.row == 0 && CarControl.car[no].newpos.col == 2)) {
             if (no < 5) {
-                leave2(down, up);
+                leaveDirection("Down");
             } else {
-                leave2(up, down);
+                leaveDirection("Up");
             }
         }
     }
