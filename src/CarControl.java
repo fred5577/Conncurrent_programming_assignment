@@ -243,11 +243,29 @@ class Alley {
             }
         }
     }
+}
 
+class Barrier {
+
+    static Semaphore on = new Semaphore(1);
+
+    public void sync(){
+
+    }
+
+    public void on(){
+
+    }
+
+    public void off(){
+
+    }
 }
 
 
 public class CarControl implements CarControlI {
+
+    public static Barrier barrier;
 
     public static Semaphore[][] semaphores = new Semaphore[11][12];
     CarDisplayI cd;           // Reference to GUI
@@ -281,10 +299,12 @@ public class CarControl implements CarControlI {
 
     public void barrierOn() {
         cd.println("Barrier On not implemented in this version");
+        barrier.on();
     }
 
     public void barrierOff() {
         cd.println("Barrier Off not implemented in this version");
+        barrier.off();
     }
 
     public void barrierShutDown() {
