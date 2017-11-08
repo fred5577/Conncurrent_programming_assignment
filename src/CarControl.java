@@ -141,6 +141,11 @@ class Car extends Thread {
                     mygate.pass();
                     speed = chooseSpeed();
                 }
+
+                if (curpos.equals(barpos)) {
+                    CarControl.barrier.sync();
+                }
+
                 newpos = nextPos(curpos);
                 Alley.enter(no);
                 CarControl.semaphores[newpos.row][newpos.col].P();
@@ -247,12 +252,63 @@ class Alley {
 }
 
 
+class Barrier {
+
+
+    private Semaphore mutex = new Semaphore(1);
+    private Semaphore goIn = new Semaphore(0);
+    private Semaphore goOut = new Semaphore(1);
+
+    private int count = 0;
+
+    public void sync() throws InterruptedException {
+
+        mutex.P();
+        count++;
+        if (count == 9) {
+            goOut.P();
+            goIn.V();
+        }
+        mutex.V();
+
+        goIn.P(); // Will be zero until the count == 9
+        goIn.V();
+
+        // Critical region, her passere vi barrieren
+
+        mutex.P();
+        count--;
+        if (count == 0) {
+            mutex.V();
+            goIn.P();
+            goOut.V();
+        } else {
+            mutex.V();
+        }
+
+        goOut.P(); // Will be zero because of count == 9 and will first be one again when when count reaches 0, meaning all have passed the region
+        goOut.V();
+
+    }
+
+    public void on() {
+
+    }
+
+    public void off() {
+
+    }
+
+}
+
+
 public class CarControl implements CarControlI {
 
     public static Semaphore[][] semaphores = new Semaphore[11][12];
     CarDisplayI cd;           // Reference to GUI
     public static Car[] car;               // Cars
     Gate[] gate;              // Gates
+    public static Barrier barrier = new Barrier();
 
     public CarControl(CarDisplayI cd) {
         this.cd = cd;
@@ -280,11 +336,13 @@ public class CarControl implements CarControlI {
     }
 
     public void barrierOn() {
-        cd.println("Barrier On not implemented in this version");
+        barrier.on();
+//        cd.println("Barrier On not implemented in this version");
     }
 
     public void barrierOff() {
-        cd.println("Barrier Off not implemented in this version");
+        barrier.off();
+        //cd.println("Barrier Off not implemented in this version");
     }
 
     public void barrierShutDown() {
