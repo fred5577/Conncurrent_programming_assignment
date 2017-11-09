@@ -261,9 +261,16 @@ class Barrier {
 
     private int count = 0;
 
+    private boolean on = false;
+
     public void sync() throws InterruptedException {
 
         mutex.P();
+        if (!on) {
+            mutex.V();
+            return;
+        }
+
         count++;
         if (count == 9) {
             goOut.P();
@@ -290,12 +297,21 @@ class Barrier {
         goOut.V();
     }
 
-    public void on() {
-
+    public void on() throws InterruptedException {
+        mutex.P();
+        on = true;
+        mutex.V();
     }
 
-    public void off() {
-
+    public void off() throws InterruptedException {
+        // TODO: needs to free up waiting.
+        mutex.P();
+        on = false;
+        if (count > 0) {
+            goOut.P();
+            goIn.V();
+        }
+        mutex.V();
     }
 
 }
@@ -335,12 +351,20 @@ public class CarControl implements CarControlI {
     }
 
     public void barrierOn() {
-        barrier.on();
+        try {
+            barrier.on();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 //        cd.println("Barrier On not implemented in this version");
     }
 
     public void barrierOff() {
-        barrier.off();
+        try {
+            barrier.off();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         //cd.println("Barrier Off not implemented in this version");
     }
 
