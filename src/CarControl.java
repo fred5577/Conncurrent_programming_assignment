@@ -281,6 +281,7 @@ class Barrier {
         goIn.P(); // Will be zero until the count == 9
         goIn.V();
 
+
         // Critical region, her passere vi barrieren
 
         mutex.P();
