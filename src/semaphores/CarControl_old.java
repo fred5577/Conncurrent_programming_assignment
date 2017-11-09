@@ -1,14 +1,15 @@
-//Prototype implementation of Car Control
+package semaphores;//Prototype implementation of Car Control
 //Mandatory assignment
 //Course 02158 Concurrent Programming, DTU, Fall 2017
 
 //Hans Henrik Lovengreen     Oct 9, 2017
 
 
-import java.awt.Color;
+import java.awt.*;
+import java.util.concurrent.Semaphore;
 
 class Gate {
-
+/*
     Semaphore g = new Semaphore(0);
     Semaphore e = new Semaphore(1);
     boolean isopen = false;
@@ -46,7 +47,7 @@ class Gate {
     }
 
 }
-
+/*
 class Car extends Thread {
 
     int basespeed = 100;             // Rather: degree of slowness
@@ -147,7 +148,7 @@ class Car extends Thread {
                 }
 
                 newpos = nextPos(curpos);
-                CarControl.alley.enter(no);
+                Alley.enter(no);
                 CarControl.semaphores[newpos.row][newpos.col].P();
 
                 //  Move to new position
@@ -156,7 +157,7 @@ class Car extends Thread {
                 sleep(speed());
                 cd.clear(curpos, newpos);
                 cd.mark(newpos, col, no);
-                CarControl.alley.leave(no);
+                Alley.leave(no);
                 CarControl.semaphores[curpos.row][curpos.col].V();
                 curpos = newpos;
             }
@@ -176,36 +177,61 @@ class Alley {
      * Inspired by chapter 4, page 170, section 4.4.2 readers/writers.
      * Since the example are used multiple readers who are excluded from the writer, we thought about creating two groups of "readers" each group excluded from the other group.
      */
+/*
+
+    static Semaphore down = new Semaphore(1);
+    static Semaphore up = new Semaphore(1);
+    static Semaphore read = new Semaphore(1);
 
     static int counterU = 0;
     static int counterD = 0;
 
-    synchronized void enterDirection(String direction) throws InterruptedException {
-        if (direction.equals("Down")) {
-            while (counterU > 0) {
-                wait();
+
+    static void enterDirection(String direction) {
+        try {
+            if (direction.equals("Down")) {
+                down.P();
+                counterD++;
+                if (counterD == 1) {
+                    read.P();
+                }
+                down.V();
+            } else {
+                up.P();
+                counterU++;
+                if (counterU == 1) {
+                    read.P();
+                }
+                up.V();
             }
-            counterD++;
-        } else {
-            while (counterD > 0) {
-                wait();
-            }
-            counterU++;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
-    synchronized void leaveDirection(String direction) {
-        if (direction.equals("Down")) {
-            counterD--;
-        } else {
-            counterU--;
-        }
-        if (counterD + counterU == 0) {
-            notifyAll();
+    static void leaveDirection(String direction) {
+        try {
+            if (direction.equals("Down")) {
+                down.P();
+                counterD--;
+                if (counterD == 0) {
+                    read.V();
+                }
+                down.V();
+            } else {
+                up.P();
+                counterU--;
+                if (counterU == 0) {
+                    read.V();
+                }
+                up.V();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
-    public synchronized void enter(int no) throws InterruptedException {
+    static void enter(int no) {
         if (no < 5) {
             if ((CarControl.car[no].newpos.row == 2 && CarControl.car[no].newpos.col == 1) || (CarControl.car[no].newpos.row == 1 && CarControl.car[no].newpos.col == 2)) {
                 enterDirection("Down");
@@ -215,7 +241,7 @@ class Alley {
         }
     }
 
-    public synchronized void leave(int no) {
+    static void leave(int no) {
         if ((no < 5 && CarControl.car[no].newpos.row == 9 && CarControl.car[no].newpos.col == 1) || (CarControl.car[no].newpos.row == 0 && CarControl.car[no].newpos.col == 2)) {
             if (no < 5) {
                 leaveDirection("Down");
@@ -300,7 +326,6 @@ public class CarControl implements CarControlI {
     public static Car[] car;               // Cars
     Gate[] gate;              // Gates
     public static Barrier barrier = new Barrier();
-    public static Alley alley = new Alley();
 
     public CarControl(CarDisplayI cd) {
         this.cd = cd;
@@ -371,6 +396,7 @@ public class CarControl implements CarControlI {
 
     /* Speed settings for testing purposes */
 
+/*
     public void setSpeed(int no, int speed) {
         car[no].setSpeed(speed);
     }
@@ -378,7 +404,7 @@ public class CarControl implements CarControlI {
     public void setVariation(int no, int var) {
         car[no].setVariation(var);
     }
-
+*/
 }
 
 
