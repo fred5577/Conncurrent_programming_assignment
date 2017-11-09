@@ -5,7 +5,10 @@
 //Hans Henrik Lovengreen     Oct 9, 2017
 
 
+import groovy.ui.SystemOutputInterceptor;
+
 import java.awt.Color;
+import java.util.prefs.Preferences;
 
 class Gate {
 
@@ -238,60 +241,51 @@ class Barrier {
     private int count = 0;
 
     private boolean on = false;
+    private  boolean shutDownOn = false;
 
-    public void sync() throws InterruptedException {
-
-        mutex.P();
-        if (!on) {
-            mutex.V();
+    public synchronized void sync() throws InterruptedException {
+        if(!on){
             return;
         }
-
         count++;
-        if (count == 9) {
-            goOut.P();
-            goIn.V();
+        System.out.println(count);
+        //System.out.println(shutDownOn);
+
+        if(count != 9) {
+            wait();
         }
-        mutex.V();
-
-        goIn.P(); // Will be zero until the count == 9
-        goIn.V();
-
 
         // Critical region, her passere vi barrieren
 
-        mutex.P();
         count--;
-        if (count == 0) {
-            mutex.V();
-            goIn.P();
-            goOut.V();
-        } else {
-            mutex.V();
+        notifyAll();
+        if(shutDownOn && count == 0){
+            off();
         }
-
-        goOut.P(); // Will be zero because of count == 9 and will first be one again when when count reaches 0, meaning all have passed the region
-        goOut.V();
     }
 
-    public void on() throws InterruptedException {
-        mutex.P();
+    public synchronized void on() throws InterruptedException {
         on = true;
-        mutex.V();
     }
 
-    public void off() throws InterruptedException {
-        mutex.P();
+    public synchronized void off() throws InterruptedException {
         on = false;
-        if (count > 0) {
-            goOut.P();
-            goIn.V();
-        }
-        mutex.V();
+        shutDownOn = false;
+        notifyAll();
+        count = 0;
     }
 
-}
+    public synchronized void shutDown() throws InterruptedException{
+        if(!on){
+            return;
+        } else if(on && count==0) {
+            return;
+        }
+        System.out.println(shutDownOn);
 
+        shutDownOn = true;
+    }
+}
 
 public class CarControl implements CarControlI {
 
@@ -346,11 +340,10 @@ public class CarControl implements CarControlI {
     }
 
     public void barrierShutDown() {
-        cd.println("Barrier shut down not implemented in this version");
         // This sleep is for illustrating how blocking affects the GUI
         // Remove when shutdown is implemented.
         try {
-            Thread.sleep(3000);
+            barrier.shutDown();
         } catch (InterruptedException e) {
         }
         // Recommendation: 
