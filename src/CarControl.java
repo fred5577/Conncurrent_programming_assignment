@@ -150,25 +150,19 @@ class Car extends Thread {
 
                 newpos = nextPos(curpos);
                 CarControl.alley.enter(no);
-                if(CarControl.removed[no]){
-                    System.out.println("PIS");
-                    break;
-                }
-                isWaiting = 0;
                 CarControl.semaphores[newpos.row][newpos.col].P();
                 isWaiting = 1;
 
                 //  Move to new position
                 cd.clear(curpos);
                 cd.mark(curpos, newpos, col, no);
-                isWaiting = 2;
                 sleep(speed());
                 cd.clear(curpos, newpos);
                 cd.mark(newpos, col, no);
-                isWaiting = 3;
                 CarControl.alley.leave(no);
                 CarControl.semaphores[curpos.row][curpos.col].V();
                 curpos = newpos;
+                isWaiting = 0;
 
             }
 
@@ -199,24 +193,20 @@ class Alley {
                 counterD--;
             }
         }
-        notifyAll();
+        if (counterD + counterU == 0) {
+            notifyAll();
+        }
     }
 
     synchronized void enterDirection(int no) throws InterruptedException {
         if (no < 5) {
-            while (counterU > 0 && !CarControl.removed[no]) {
+            while (counterU > 0) {
                 wait();
-            }
-            if (CarControl.removed[no]) {
-                return;
             }
             counterD++;
         } else {
-            while (counterD > 0 && !CarControl.removed[no]) {
+            while (counterD > 0) {
                 wait();
-            }
-            if (CarControl.removed[no]) {
-                return;
             }
             counterU++;
         }
@@ -257,11 +247,6 @@ class Alley {
 
 
 class Barrier {
-
-
-    private Semaphore mutex = new Semaphore(1);
-    private Semaphore goIn = new Semaphore(0);
-    private Semaphore goOut = new Semaphore(1);
 
     private int count = 0;
 
@@ -386,24 +371,22 @@ public class CarControl implements CarControlI {
     }
 
     public void removeCar(int no) {
-        if(!removed[no]) {
-            removed[no] = true;
+        if (!removed[no]) {
             car[no].interrupt();
-            alley.countDown(no);
-            semaphores[car[no].curpos.row][car[no].curpos.col].V();
 
-            if(car[no].isWaiting < 3){
-                cd.clear(car[no].curpos);
-            }
-            if(car[no].isWaiting > 2){
+            removed[no] = true;
+            alley.countDown(no);
+
+            cd.clear(car[no].curpos);
+            semaphores[car[no].curpos.row][car[no].curpos.col].V();
+            if(car[no].isWaiting == 1){
                 cd.clear(car[no].newpos);
-            }
-            if(car[no].isWaiting > 0){
                 semaphores[car[no].newpos.row][car[no].newpos.col].V();
             }
         }
         cd.println("Remove Car not implemented in this version");
     }
+
 
     public void restoreCar(int no) {
         if (removed[no]) {
