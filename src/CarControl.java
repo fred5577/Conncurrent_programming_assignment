@@ -5,10 +5,7 @@
 //Hans Henrik Lovengreen     Oct 9, 2017
 
 
-import groovy.ui.SystemOutputInterceptor;
-
 import java.awt.Color;
-import java.util.prefs.Preferences;
 
 class Gate {
 
@@ -67,6 +64,8 @@ class Car extends Thread {
     int speed;                       // Current car speed
     Pos curpos;                      // Current position 
     Pos newpos;                      // New position to go to
+
+    int isWaiting = 0;
 
     public Car(int no, CarDisplayI cd, Gate g) {
 
@@ -151,17 +150,26 @@ class Car extends Thread {
 
                 newpos = nextPos(curpos);
                 CarControl.alley.enter(no);
+                if(CarControl.removed[no]){
+                    System.out.println("PIS");
+                    break;
+                }
+                isWaiting = 0;
                 CarControl.semaphores[newpos.row][newpos.col].P();
+                isWaiting = 1;
 
                 //  Move to new position
                 cd.clear(curpos);
                 cd.mark(curpos, newpos, col, no);
+                isWaiting = 2;
                 sleep(speed());
                 cd.clear(curpos, newpos);
                 cd.mark(newpos, col, no);
+                isWaiting = 3;
                 CarControl.alley.leave(no);
                 CarControl.semaphores[curpos.row][curpos.col].V();
                 curpos = newpos;
+
             }
 
         } catch (Exception e) {
@@ -183,15 +191,32 @@ class Alley {
     static int counterU = 0;
     static int counterD = 0;
 
-    synchronized void enterDirection(String direction) throws InterruptedException {
-        if (direction.equals("Down")) {
-            while (counterU > 0) {
+    synchronized void countDown(int no) {
+        if ((CarControl.car[no].curpos.row < 10 && CarControl.car[no].curpos.col < 2) || (CarControl.car[no].curpos.row == 1 && CarControl.car[no].curpos.col == 2)) {
+            if (no > 4) {
+                counterU--;
+            } else {
+                counterD--;
+            }
+        }
+        notifyAll();
+    }
+
+    synchronized void enterDirection(int no) throws InterruptedException {
+        if (no < 5) {
+            while (counterU > 0 && !CarControl.removed[no]) {
                 wait();
+            }
+            if (CarControl.removed[no]) {
+                return;
             }
             counterD++;
         } else {
-            while (counterD > 0) {
+            while (counterD > 0 && !CarControl.removed[no]) {
                 wait();
+            }
+            if (CarControl.removed[no]) {
+                return;
             }
             counterU++;
         }
@@ -211,10 +236,10 @@ class Alley {
     public synchronized void enter(int no) throws InterruptedException {
         if (no < 5) {
             if ((CarControl.car[no].newpos.row == 2 && CarControl.car[no].newpos.col == 1) || (CarControl.car[no].newpos.row == 1 && CarControl.car[no].newpos.col == 2)) {
-                enterDirection("Down");
+                enterDirection(no);
             }
         } else if (CarControl.car[no].newpos.row == 9 && CarControl.car[no].newpos.col == 0) {
-            enterDirection("Up");
+            enterDirection(no);
         }
     }
 
@@ -241,25 +266,30 @@ class Barrier {
     private int count = 0;
 
     private boolean on = false;
-    private  boolean shutDownOn = false;
+    private boolean shutDownOn = false;
+    private boolean allExit = true;
 
     public synchronized void sync() throws InterruptedException {
-        if(!on){
+        if (!on) {
             return;
         }
         count++;
         System.out.println(count);
         //System.out.println(shutDownOn);
 
-        if(count != 9) {
-            wait();
+        if (count != 9) {
+            allExit = false;
+            while (!allExit) {
+                wait();
+            }
         }
 
         // Critical region, her passere vi barrieren
 
         count--;
         notifyAll();
-        if(shutDownOn && count == 0){
+        allExit = true;
+        if (shutDownOn && count == 0) {
             off();
         }
     }
@@ -271,24 +301,27 @@ class Barrier {
     public synchronized void off() throws InterruptedException {
         on = false;
         shutDownOn = false;
-        notifyAll();
         count = 0;
+        allExit = true;
+        notifyAll();
     }
 
-    public synchronized void shutDown() throws InterruptedException{
-        if(!on){
+    public synchronized void shutDown() throws InterruptedException {
+        if (!on) {
             return;
-        } else if(on && count==0) {
+        } else if (on && count == 0) {
             return;
         }
         System.out.println(shutDownOn);
-
         shutDownOn = true;
+        wait();
     }
 }
 
 public class CarControl implements CarControlI {
 
+
+    public static boolean[] removed = new boolean[9];
     public static Semaphore[][] semaphores = new Semaphore[11][12];
     CarDisplayI cd;           // Reference to GUI
     public static Car[] car;               // Cars
@@ -325,7 +358,6 @@ public class CarControl implements CarControlI {
         try {
             barrier.on();
         } catch (InterruptedException e) {
-            e.printStackTrace();
         }
 //        cd.println("Barrier On not implemented in this version");
     }
@@ -334,7 +366,6 @@ public class CarControl implements CarControlI {
         try {
             barrier.off();
         } catch (InterruptedException e) {
-            e.printStackTrace();
         }
         //cd.println("Barrier Off not implemented in this version");
     }
@@ -355,10 +386,31 @@ public class CarControl implements CarControlI {
     }
 
     public void removeCar(int no) {
+        if(!removed[no]) {
+            removed[no] = true;
+            car[no].interrupt();
+            alley.countDown(no);
+            semaphores[car[no].curpos.row][car[no].curpos.col].V();
+
+            if(car[no].isWaiting < 3){
+                cd.clear(car[no].curpos);
+            }
+            if(car[no].isWaiting > 2){
+                cd.clear(car[no].newpos);
+            }
+            if(car[no].isWaiting > 0){
+                semaphores[car[no].newpos.row][car[no].newpos.col].V();
+            }
+        }
         cd.println("Remove Car not implemented in this version");
     }
 
     public void restoreCar(int no) {
+        if (removed[no]) {
+            removed[no] = false;
+            car[no] = new Car(no, cd, gate[no]);
+            car[no].start();
+        }
         cd.println("Restore Car not implemented in this version");
     }
 

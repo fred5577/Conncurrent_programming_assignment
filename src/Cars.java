@@ -92,7 +92,7 @@ class Tile extends JPanel {
         addMouseListener(new MouseAdapter () {
             public void mousePressed(MouseEvent e) {
                 if (isstartpos) {
-                    if ((e.getModifiers() & InputEvent.SHIFT_MASK) > 0)  
+                    if ((e.getModifiers() & InputEvent.SHIFT_MASK) > 0)
                         cars.removeCar(startposno);
                     else
                         if ((e.getModifiers() & InputEvent.CTRL_MASK) > 0) 
