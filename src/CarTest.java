@@ -30,7 +30,7 @@ public class CarTest extends Thread {
                         cars.println("Start car 1");
                         sleep(10);
                         cars.setSpeed(1, 20);
-                        sleep(500);
+                        sleep(750);
                         cars.setSpeed(1, 10000);
                         cars.stopCar(1);
                         cars.println("Car 1 blocks the alley");

@@ -65,7 +65,8 @@ class Car extends Thread {
     Pos curpos;                      // Current position 
     Pos newpos;                      // New position to go to
 
-    int isWaiting = 0;
+    boolean V_new = false;
+    boolean V_current = false;
 
     public Car(int no, CarDisplayI cd, Gate g) {
 
@@ -138,6 +139,9 @@ class Car extends Thread {
             cd.mark(curpos, col, no);
 
             while (true) {
+                if(CarControl.removed[no]){
+                    return;
+                }
                 sleep(speed());
 
                 if (atGate(curpos)) {
@@ -152,7 +156,7 @@ class Car extends Thread {
                 newpos = nextPos(curpos);
                 CarControl.alley.enter(no);
                 CarControl.semaphores[newpos.row][newpos.col].P();
-                isWaiting = 1;
+                V_new = true;
 
                 //  Move to new position
                 cd.clear(curpos);
@@ -162,8 +166,11 @@ class Car extends Thread {
                 cd.mark(newpos, col, no);
                 CarControl.alley.leave(no);
                 CarControl.semaphores[curpos.row][curpos.col].V();
+                V_current = false;
                 curpos = newpos;
-                isWaiting = 0;
+                sleep(speed());
+                V_current = true;
+                V_new = false;
             }
 
         } catch (Exception e) {
@@ -216,8 +223,8 @@ class Alley {
         } else {
             counterU--;
         }
-        System.out.println(counterU);
         if (counterD + counterU == 0) {
+            notifyAll();
         }
     }
 
@@ -270,8 +277,8 @@ class Barrier {
         // Critical region, her passere vi barrieren
 
         count--;
-        notifyAll();
         allExit = true;
+        notifyAll();
         if (shutDownOn && count == 0) {
             off();
         }
@@ -370,17 +377,18 @@ public class CarControl implements CarControlI {
 
     public void removeCar(int no) {
         if (!removed[no]) {
-            car[no].interrupt();
-
             removed[no] = true;
             alley.countDown(no);
 
-            cd.clear(car[no].curpos);
-            semaphores[car[no].curpos.row][car[no].curpos.col].V();
-            if(car[no].isWaiting == 1){
+            if (car[no].V_current) {
+                cd.clear(car[no].curpos);
+                semaphores[car[no].curpos.row][car[no].curpos.col].V();
+            }
+            if (car[no].V_new) {
                 cd.clear(car[no].newpos);
                 semaphores[car[no].newpos.row][car[no].newpos.col].V();
             }
+            car[no].interrupt();
             notifyAll();
         }
         cd.println("Remove Car not implemented in this version");
