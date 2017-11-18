@@ -24,7 +24,55 @@ public class CarTest extends Thread {
                 sleep(3000);
                 cars.stopAll();
                 break;
-
+                case 1:
+                    for (int j = 0; j < 1000; j++) {
+                        cars.startCar(1);
+                        cars.println("Start car 1");
+                        sleep(10);
+                        cars.setSpeed(1, 20);
+                        sleep(500);
+                        cars.setSpeed(1, 10000);
+                        cars.stopCar(1);
+                        cars.println("Car 1 blocks the alley");
+                        for (int i = 5; i < 9; i++) {
+                            cars.startCar(i);
+                        }
+                        sleep(10);
+                        for (int i = 5; i < 9; i++) {
+                            cars.setSpeed(i, 50);
+                        }
+                        sleep(5000);
+                        cars.println("Remove and restore car 5 at once");
+                        cars.removeCar(5);
+                        cars.restoreCar(5);
+                        sleep(5000);
+                        cars.println("Remove car 7");
+                        cars.removeCar(7);
+                        cars.println("Start car 2 and 3");
+                        cars.startCar(2);
+                        cars.startCar(3);
+                        sleep(10);
+                        cars.setSpeed(2, 20);
+                        cars.setSpeed(3, 20);
+                        cars.stopCar(2);
+                        cars.stopCar(3);
+                        sleep(5000);
+                        cars.println("Remove and restore all cars in the alley at once");
+                        for (int i = 1; i < 4; i++) {
+                            cars.removeCar(i);
+                            cars.restoreCar(i);
+                            //sleep(i*5);
+                        }
+                        sleep(10);
+                        cars.removeCar(6);
+                        sleep(100);
+                        cars.restoreCar(6);
+                        cars.restoreCar(7);
+                        cars.setSpeed(1, 20);
+                        cars.stopAll();
+                        sleep(5000);
+                    }
+                    break;
             case 19:
                 // Demonstration of speed setting.
                 // Change speed to double of default values

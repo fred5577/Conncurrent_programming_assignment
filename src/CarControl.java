@@ -94,6 +94,7 @@ class Car extends Thread {
     public synchronized void setSpeed(int speed) {
         if (no != 0 && speed >= 0) {
             basespeed = speed;
+            this.speed = speed;
         } else
             cd.println("Illegal speed settings");
     }
@@ -163,7 +164,6 @@ class Car extends Thread {
                 CarControl.semaphores[curpos.row][curpos.col].V();
                 curpos = newpos;
                 isWaiting = 0;
-
             }
 
         } catch (Exception e) {
@@ -184,6 +184,7 @@ class Alley {
 
     static int counterU = 0;
     static int counterD = 0;
+    Semaphore move = new Semaphore(0);
 
     synchronized void countDown(int no) {
         if ((CarControl.car[no].curpos.row < 10 && CarControl.car[no].curpos.col < 2) || (CarControl.car[no].curpos.row == 1 && CarControl.car[no].curpos.col == 2)) {
@@ -218,6 +219,7 @@ class Alley {
         } else {
             counterU--;
         }
+        System.out.println(counterU);
         if (counterD + counterU == 0) {
             notifyAll();
         }
