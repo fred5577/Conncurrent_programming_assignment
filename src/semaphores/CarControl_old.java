@@ -284,18 +284,15 @@ class Barrier {
         goIn.V();
 
 
-        // Critical region, her passere vi barrieren
+        // Critical region, here the cars pass the barrier
 
         mutex.P();
         count--;
         if (count == 0) {
-            mutex.V();
             goIn.P();
             goOut.V();
-        } else {
-            mutex.V();
         }
-
+        mutex.V();
         goOut.P(); // Will be zero because of count == 9 and will first be one again when when count reaches 0, meaning all have passed the region
         goOut.V();
     }

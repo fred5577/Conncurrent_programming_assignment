@@ -302,7 +302,6 @@ class Barrier {
         } else if (on && count == 0) {
             return;
         }
-        System.out.println(shutDownOn);
         shutDownOn = true;
         wait();
     }

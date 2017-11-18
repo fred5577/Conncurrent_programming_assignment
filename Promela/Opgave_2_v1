@@ -24,14 +24,14 @@ short counterD = 0;
 short counterU = 0;
 
 /* For testing */
-short countUpwardInAllay = 0;
-short countDownwardInAllay = 0;
+short countUpwardInAlley = 0;
+short countDownwardInAlley = 0;
 
 active proctype Check()
 {
-	!((countUpwardInAllay==0 && countDownwardInAllay==0) ||
-	(countUpwardInAllay!=0 && countDownwardInAllay==0) ||
-	(countUpwardInAllay==0 && countDownwardInAllay!=0)) -> assert(false)
+	!((countUpwardInAlley==0 && countDownwardInAlley==0) ||
+	(countUpwardInAlley!=0 && countDownwardInAlley==0) ||
+	(countUpwardInAlley==0 && countDownwardInAlley!=0)) -> assert(false)
 }
 
 inline P(sem){
@@ -88,11 +88,11 @@ proctype CAR(byte dir) {
 		/* CRITICAL, USed for evaluation purposes */
 		if
 		:: dir == DOWN ->
-							countDownwardInAllay++;
-							countDownwardInAllay--;
+							countDownwardInAlley++;
+							countDownwardInAlley--;
 		:: dir == UP ->
-							countUpwardInAllay++;
-							countUpwardInAllay--;
+							countUpwardInAlley++;
+							countUpwardInAlley--;
 		fi;
 		/* CRITICAL */
 		leave(dir);
