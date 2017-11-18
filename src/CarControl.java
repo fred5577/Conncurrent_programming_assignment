@@ -194,9 +194,6 @@ class Alley {
                 counterD--;
             }
         }
-        if (counterD + counterU == 0) {
-            notifyAll();
-        }
     }
 
     synchronized void enterDirection(int no) throws InterruptedException {
@@ -221,7 +218,6 @@ class Alley {
         }
         System.out.println(counterU);
         if (counterD + counterU == 0) {
-            notifyAll();
         }
     }
 
@@ -385,6 +381,7 @@ public class CarControl implements CarControlI {
                 cd.clear(car[no].newpos);
                 semaphores[car[no].newpos.row][car[no].newpos.col].V();
             }
+            notifyAll();
         }
         cd.println("Remove Car not implemented in this version");
     }
