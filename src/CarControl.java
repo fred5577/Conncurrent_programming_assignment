@@ -68,6 +68,10 @@ class Car extends Thread {
     boolean V_new = false;
     boolean V_current = false;
 
+    boolean inAlley = false;
+    Semaphore deleteSem = new Semaphore(1);
+
+
     public Car(int no, CarDisplayI cd, Gate g) {
 
         this.no = no;
@@ -139,9 +143,6 @@ class Car extends Thread {
             cd.mark(curpos, col, no);
 
             while (true) {
-                if(CarControl.removed[no]){
-                    return;
-                }
                 sleep(speed());
 
                 if (atGate(curpos)) {
@@ -155,22 +156,26 @@ class Car extends Thread {
 
                 newpos = nextPos(curpos);
                 CarControl.alley.enter(no);
+
                 CarControl.semaphores[newpos.row][newpos.col].P();
+                sleep(speed*2);
+
+                deleteSem.P();
                 V_new = true;
 
-                //  Move to new position
                 cd.clear(curpos);
                 cd.mark(curpos, newpos, col, no);
                 sleep(speed());
                 cd.clear(curpos, newpos);
                 cd.mark(newpos, col, no);
+
                 CarControl.alley.leave(no);
                 CarControl.semaphores[curpos.row][curpos.col].V();
                 V_current = false;
                 curpos = newpos;
-                sleep(speed());
                 V_current = true;
                 V_new = false;
+                deleteSem.V();
             }
 
         } catch (Exception e) {
@@ -191,10 +196,9 @@ class Alley {
 
     static int counterU = 0;
     static int counterD = 0;
-    Semaphore move = new Semaphore(0);
 
     synchronized void countDown(int no) {
-        if ((CarControl.car[no].curpos.row < 10 && CarControl.car[no].curpos.col < 2) || (CarControl.car[no].curpos.row == 1 && CarControl.car[no].curpos.col == 2)) {
+        if (CarControl.car[no].inAlley) {
             if (no > 4) {
                 counterU--;
             } else {
@@ -203,18 +207,25 @@ class Alley {
         }
     }
 
+
     synchronized void enterDirection(int no) throws InterruptedException {
         if (no < 5) {
             while (counterU > 0) {
                 wait();
             }
-            counterD++;
         } else {
             while (counterD > 0) {
                 wait();
             }
+        }
+        CarControl.car[no].deleteSem.P();
+        if (no < 5) {
+            counterD++;
+        } else {
             counterU++;
         }
+        CarControl.car[no].inAlley = true;
+        CarControl.car[no].deleteSem.V();
     }
 
     synchronized void leaveDirection(String direction) {
@@ -245,6 +256,7 @@ class Alley {
             } else {
                 leaveDirection("Up");
             }
+            CarControl.car[no].inAlley = false;
         }
     }
 
@@ -312,6 +324,7 @@ public class CarControl implements CarControlI {
 
     public static boolean[] removed = new boolean[9];
     public static Semaphore[][] semaphores = new Semaphore[11][12];
+    public static Semaphore deleteSem = new Semaphore(1);
     CarDisplayI cd;           // Reference to GUI
     public static Car[] car;               // Cars
     Gate[] gate;              // Gates
@@ -375,22 +388,28 @@ public class CarControl implements CarControlI {
     }
 
     public void removeCar(int no) {
-        if (!removed[no]) {
-            removed[no] = true;
-            alley.countDown(no);
+        try {
+            if (!removed[no]) {
+                car[no].deleteSem.P();
+                car[no].interrupt();
+                removed[no] = true;
+                alley.countDown(no);
 
-            if (car[no].V_current) {
-                cd.clear(car[no].curpos);
-                semaphores[car[no].curpos.row][car[no].curpos.col].V();
+//                if (car[no].V_current) {
+                    cd.clear(car[no].curpos);
+                    semaphores[car[no].curpos.row][car[no].curpos.col].V();
+/*                }
+                if (car[no].V_new) {
+                    cd.clear(car[no].newpos);
+                    semaphores[car[no].newpos.row][car[no].newpos.col].V();
+                }
+*/                notifyAll();
+                car[no].deleteSem.V();
             }
-            if (car[no].V_new) {
-                cd.clear(car[no].newpos);
-                semaphores[car[no].newpos.row][car[no].newpos.col].V();
-            }
-            car[no].interrupt();
-            notifyAll();
+        } catch (Exception e) {
+
         }
-        cd.println("Remove Car not implemented in this version");
+        cd.println("Remove Car " + no);
     }
 
 
@@ -400,7 +419,7 @@ public class CarControl implements CarControlI {
             car[no] = new Car(no, cd, gate[no]);
             car[no].start();
         }
-        cd.println("Restore Car not implemented in this version");
+        cd.println("Restore Car " + no);
     }
 
     /* Speed settings for testing purposes */
