@@ -158,7 +158,6 @@ class Car extends Thread {
                 CarControl.alley.enter(no);
 
                 CarControl.semaphores[newpos.row][newpos.col].P();
-                sleep(speed*2);
 
                 deleteSem.P();
                 V_new = true;
@@ -297,13 +296,13 @@ class Barrier {
     }
 
     public synchronized void on() throws InterruptedException {
+        count = 0;
         on = true;
     }
 
     public synchronized void off() throws InterruptedException {
         on = false;
         shutDownOn = false;
-        count = 0;
         allExit = true;
         notifyAll();
     }

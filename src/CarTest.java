@@ -27,7 +27,7 @@ public class CarTest extends Thread {
                     cars.stopAll();
                     break;
                 case 1:
-                    int speed = 20;
+                    int speed = 1;
                     cars.startAll();
                     for (int i = 1; i < 9; i++) {
                         cars.setSpeed(i, speed);
@@ -39,6 +39,40 @@ public class CarTest extends Thread {
                         sleep(500);
                         cars.restoreCar(rand);
                         cars.setSpeed(rand, speed);
+                    }
+                    break;
+                case 2:
+                    cars.startCar(0);
+                    sleep(500);
+                    cars.removeCar(0);
+                    cars.restoreCar(0);
+                    break;
+                case 3:
+                    cars.startAll();
+                    cars.startCar(0);
+                    for (int i = 1; i < 9; i++) {
+                        cars.setSpeed(i, 1);
+                    }
+                    cars.barrierOn();
+                    sleep(5000);
+                    cars.startBarrierShutDown();
+                    cars.awaitBarrierShutDown();
+                    sleep(2000);
+                    cars.barrierOn();
+                    for (int i = 0; i < 20; i++) {
+                        int rand = new Random().nextInt(2500);
+                        sleep(2500+ rand);
+                        cars.barrierOff();
+                        rand = new Random().nextInt(5000);
+                        sleep(rand);
+                        cars.barrierOn();
+                    }
+                    break;
+                case 4:
+                    cars.startAll();
+                    cars.startCar(0);
+                    for (int i = 1; i < 9; i++) {
+                        cars.setSpeed(i, 0);
                     }
                     break;
                 case 19:
