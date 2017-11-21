@@ -160,19 +160,21 @@ class Car extends Thread {
                 CarControl.semaphores[newpos.row][newpos.col].P();
 
                 deleteSem.P();
-                V_new = true;
-
                 cd.clear(curpos);
                 cd.mark(curpos, newpos, col, no);
+                V_new = true;
+                deleteSem.V();
+
                 sleep(speed());
+
+                deleteSem.P();
                 cd.clear(curpos, newpos);
                 cd.mark(newpos, col, no);
-
                 CarControl.alley.leave(no);
-                CarControl.semaphores[curpos.row][curpos.col].V();
-                V_current = false;
+                int tR = curpos.row;
+                int tC = curpos.col;
                 curpos = newpos;
-                V_current = true;
+                CarControl.semaphores[tR][tC].V();
                 V_new = false;
                 deleteSem.V();
             }
@@ -261,7 +263,6 @@ class Alley {
 
 }
 
-
 class Barrier {
 
     private int count = 0;
@@ -296,8 +297,10 @@ class Barrier {
     }
 
     public synchronized void on() throws InterruptedException {
-        count = 0;
-        on = true;
+        if (!on) {
+            count = 0;
+            on = true;
+        }
     }
 
     public synchronized void off() throws InterruptedException {
@@ -394,19 +397,20 @@ public class CarControl implements CarControlI {
                 removed[no] = true;
                 alley.countDown(no);
 
-//                if (car[no].V_current) {
+                if (car[no].V_new) {
+                    cd.clear(car[no].newpos, car[no].curpos);
+                    semaphores[car[no].newpos.row][car[no].newpos.col].V();
+                    semaphores[car[no].curpos.row][car[no].curpos.col].V();
+                } else {
                     cd.clear(car[no].curpos);
                     semaphores[car[no].curpos.row][car[no].curpos.col].V();
-/*                }
-                if (car[no].V_new) {
-                    cd.clear(car[no].newpos);
-                    semaphores[car[no].newpos.row][car[no].newpos.col].V();
                 }
-*/                notifyAll();
-                car[no].deleteSem.V();
-            }
-        } catch (Exception e) {
 
+                car[no].deleteSem.V();
+                notifyAll();
+            }
+        } catch (
+                Exception e) {
         }
         cd.println("Remove Car " + no);
     }

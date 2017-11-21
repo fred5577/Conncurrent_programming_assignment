@@ -75,6 +75,12 @@ public class CarTest extends Thread {
                         cars.setSpeed(i, 0);
                     }
                     break;
+                case 5:
+                    cars.startAll();
+                    for (int i = 1; i < 9; i++) {
+                        cars.setSpeed(i, 1);
+                    }
+                    break;
                 case 19:
                     // Demonstration of speed setting.
                     // Change speed to double of default values
