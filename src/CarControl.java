@@ -276,7 +276,6 @@ class Barrier {
             return;
         }
         count++;
-        System.out.println(count);
         //System.out.println(shutDownOn);
 
         if (count != 9) {
@@ -325,8 +324,8 @@ public class CarControl implements CarControlI {
 
 
     public static boolean[] removed = new boolean[9];
+    public static Semaphore timeSem = new Semaphore(9);
     public static Semaphore[][] semaphores = new Semaphore[11][12];
-    public static Semaphore deleteSem = new Semaphore(1);
     CarDisplayI cd;           // Reference to GUI
     public static Car[] car;               // Cars
     Gate[] gate;              // Gates
