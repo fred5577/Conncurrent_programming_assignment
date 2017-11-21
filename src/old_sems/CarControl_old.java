@@ -1,12 +1,9 @@
-package semaphores;//Prototype implementation of Car Control
+package old_sems;//Prototype implementation of Car Control
 //Mandatory assignment
 //Course 02158 Concurrent Programming, DTU, Fall 2017
 
 //Hans Henrik Lovengreen     Oct 9, 2017
 
-
-import java.awt.*;
-import java.util.concurrent.Semaphore;
 
 class Gate {
 /*
@@ -73,7 +70,7 @@ class Car extends Thread {
         mygate = g;
         startpos = cd.getStartPos(no);
         try {
-            CarControl.semaphores[startpos.row][startpos.col].P();
+            CarControl.old_sems[startpos.row][startpos.col].P();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -149,7 +146,7 @@ class Car extends Thread {
 
                 newpos = nextPos(curpos);
                 Alley.enter(no);
-                CarControl.semaphores[newpos.row][newpos.col].P();
+                CarControl.old_sems[newpos.row][newpos.col].P();
 
                 //  Move to new position
                 cd.clear(curpos);
@@ -158,8 +155,10 @@ class Car extends Thread {
                 cd.clear(curpos, newpos);
                 cd.mark(newpos, col, no);
                 Alley.leave(no);
-                CarControl.semaphores[curpos.row][curpos.col].V();
+                int tR = curpos.row;
+                int tC = curpos.col;
                 curpos = newpos;
+                CarControl.old_sems[tR][tC].V();
             }
 
         } catch (Exception e) {
@@ -318,7 +317,7 @@ class Barrier {
 
 public class CarControl implements CarControlI {
 
-    public static Semaphore[][] semaphores = new Semaphore[11][12];
+    public static Semaphore[][] old_sems = new Semaphore[11][12];
     CarDisplayI cd;           // Reference to GUI
     public static Car[] car;               // Cars
     Gate[] gate;              // Gates
@@ -330,7 +329,7 @@ public class CarControl implements CarControlI {
         gate = new Gate[9];
         for (int i = 0; i < 11; i++) {
             for (int j = 0; j < 12; j++) {
-                semaphores[i][j] = new Semaphore(1);
+                old_sems[i][j] = new Semaphore(1);
             }
         }
 

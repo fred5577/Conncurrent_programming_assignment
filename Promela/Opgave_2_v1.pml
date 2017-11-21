@@ -1,18 +1,14 @@
 #define UP 0
 #define DOWN 1
 
-pid up1, up2, up3, up4, down1, down2, down3, down4;
+pid up1, up2, down1, down2;
 
 init{
 	atomic {
 		up1 = run CAR(UP);
-		up1 = run CAR(UP);
-		up3 = run CAR(UP);
-		up4 = run CAR(UP);
+		up2 = run CAR(UP);
 		down1 = run CAR(DOWN);
 		down2 = run CAR(DOWN);
-		down3 = run CAR(DOWN);
-		down4 = run CAR(DOWN);
 	}
 }
 

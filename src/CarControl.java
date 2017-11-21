@@ -208,7 +208,6 @@ class Alley {
         }
     }
 
-
     synchronized void enterDirection(int no) throws InterruptedException {
         if (no < 5) {
             while (counterU > 0) {
@@ -395,7 +394,6 @@ public class CarControl implements CarControlI {
                 car[no].interrupt();
                 removed[no] = true;
                 alley.countDown(no);
-
                 if (car[no].V_new) {
                     cd.clear(car[no].newpos, car[no].curpos);
                     semaphores[car[no].newpos.row][car[no].newpos.col].V();
@@ -404,12 +402,10 @@ public class CarControl implements CarControlI {
                     cd.clear(car[no].curpos);
                     semaphores[car[no].curpos.row][car[no].curpos.col].V();
                 }
-
                 car[no].deleteSem.V();
                 notifyAll();
             }
-        } catch (
-                Exception e) {
+        } catch (Exception e) {
         }
         cd.println("Remove Car " + no);
     }

@@ -50,6 +50,37 @@ public class CarTest extends Thread {
                 case 3:
                     cars.startAll();
                     cars.startCar(0);
+                    cars.barrierOn();
+                    sleep(5000);
+                    cars.startBarrierShutDown();
+                    cars.awaitBarrierShutDown();
+                    sleep(2000);
+                    cars.barrierOn();
+                    for (int i = 0; i < 50; i++) {
+                        int rand = new Random().nextInt(2500);
+                        sleep(2500 + rand);
+                        cars.barrierOff();
+                        rand = new Random().nextInt(5000);
+                        sleep(rand);
+                        cars.barrierOn();
+                    }
+                    break;
+                case 4:
+                    cars.startAll();
+                    cars.startCar(0);
+                    for (int i = 1; i < 9; i++) {
+                        cars.setSpeed(i, 0);
+                    }
+                    break;
+                case 5:
+                    cars.startAll();
+                    for (int i = 1; i < 9; i++) {
+                        cars.setSpeed(i, 20);
+                    }
+                    break;
+                case 6:
+                    cars.startAll();
+                    cars.startCar(0);
                     for (int i = 1; i < 9; i++) {
                         cars.setSpeed(i, 0);
                     }
@@ -66,19 +97,6 @@ public class CarTest extends Thread {
                         rand = new Random().nextInt(1000);
                         sleep(rand);
                         cars.barrierOn();
-                    }
-                    break;
-                case 4:
-                    cars.startAll();
-                    cars.startCar(0);
-                    for (int i = 1; i < 9; i++) {
-                        cars.setSpeed(i, 0);
-                    }
-                    break;
-                case 5:
-                    cars.startAll();
-                    for (int i = 1; i < 9; i++) {
-                        cars.setSpeed(i, 1);
                     }
                     break;
                 case 19:
